@@ -38,6 +38,7 @@ usertrap(void)
 {
   int which_dev = 0;
 
+  //printf("Hart %d in usertrap, sscause %p\r\n", cpuid(), r_scause());
   if((r_sstatus() & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
 
@@ -126,6 +127,7 @@ usertrapret(void)
   // switches to the user page table, restores user registers,
   // and switches to user mode with sret.
   uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
+  printf("hart %d in usertrapret()\r\n", cpuid());
   ((void (*)(uint64))trampoline_userret)(satp);
 }
 
@@ -145,8 +147,8 @@ kerneltrap()
     panic("kerneltrap: interrupts enabled");
 
   if((which_dev = devintr()) == 0){
-    printf("scause %p\n", scause);
-    printf("sepc=%p stval=%p\n", r_sepc(), r_stval());
+    printf("scause %p\r\n", scause);
+    printf("sepc=%p stval=%p\r\n", r_sepc(), r_stval());
     panic("kerneltrap");
   }
 
@@ -191,7 +193,7 @@ devintr()
     } else if(irq == VIRTIO0_IRQ){
       virtio_disk_intr();
     } else if(irq){
-      printf("unexpected interrupt irq=%d\n", irq);
+      printf("Hart %d unexpected interrupt irq=%d\r\n", cpuid(), irq);
     }
 
     // the PLIC allows each device to raise at most one
@@ -202,6 +204,7 @@ devintr()
 
     return 1;
   } else if(scause == 0x8000000000000001L){
+    printf("software interrupt from a machine-mode timer interrupt forwarded by timervec in kernelvec.S\r\n");
     // software interrupt from a machine-mode timer interrupt,
     // forwarded by timervec in kernelvec.S.
 
@@ -217,10 +220,4 @@ devintr()
   } else {
     return 0;
   }
-}
-
-void
-tvec(void)
-{
-  printf("cpu %d scause %p\r\n",cpuid(), r_scause());
 }

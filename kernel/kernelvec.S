@@ -113,8 +113,11 @@ timervec:
 
         # arrange for a supervisor software interrupt
         # after this handler returns.
-        li a1, 2
+        li a1, 2 
         csrw sip, a1
+	
+	#csrr a0, mstatus
+	#call pmstatus
 
         ld a3, 16(a0)
         ld a2, 8(a0)

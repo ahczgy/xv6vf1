@@ -1,5 +1,6 @@
 K=kernel
 U=user
+D=sdio
 
 OBJS = \
   $K/entry.o \
@@ -28,7 +29,16 @@ OBJS = \
   $K/sysfile.o \
   $K/kernelvec.o \
   $K/plic.o \
-  $K/virtio_disk.o
+  $K/virtio_disk.o \
+  $K/gpio.o \
+  $D/mmc_write.o \
+  $D/ctype.o \
+  $D/util.o \
+  $D/bouncebuf.o \
+  $D/timer.o \
+  $D/mmc.o \
+  $D/dwmmc.o \
+  $K/sdio.o \
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -61,7 +71,7 @@ CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer  -gdwarf-2
 CFLAGS += -MD
 CFLAGS += -mcmodel=medany
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
-CFLAGS += -I.
+CFLAGS += -I. -I./sdio
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
@@ -136,7 +146,6 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
-	$U/_spin\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
@@ -149,6 +158,7 @@ clean:
 	$U/initcode $U/initcode.out $K/kernel fs.img \
 	mkfs/mkfs .gdbinit \
         $U/usys.S \
+	$D/*.o $D/*.d \
 	$(UPROGS)
 
 # try to generate a unique GDB port

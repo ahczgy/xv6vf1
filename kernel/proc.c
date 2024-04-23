@@ -250,6 +250,8 @@ userinit(void)
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
+  
+  //printf("hart %d sstatus %p sie %p sip %p\r\n", cpuid(), r_sstatus(), r_sie(), r_sip());
 
   release(&p->lock);
 }
@@ -449,6 +451,7 @@ scheduler(void)
   
   c->proc = 0;
   for(;;){
+
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
@@ -518,13 +521,15 @@ forkret(void)
 
   // Still holding p->lock from scheduler.
   release(&myproc()->lock);
+  //printf("hart %d in forkret() sie %p sip %p.\r\n", cpuid(), r_sie(), r_sip());
 
   if (first) {
     // File system initialization must be run in the context of a
     // regular process (e.g., because it calls sleep), and thus cannot
     // be run from main().
     first = 0;
-    fsinit(ROOTDEV);
+    //printf("Hart %d in forkret().\r\n", cpuid());
+    //fsinit(ROOTDEV);
   }
 
   usertrapret();

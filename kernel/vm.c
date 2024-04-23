@@ -33,6 +33,19 @@ kvmmake(void)
   // uart registers
   kvmmap(kpgtbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
 
+  // clint registers
+  kvmmap(kpgtbl, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+
+  // sdio0 registers
+  kvmmap(kpgtbl, SDIO0, SDIO0, 0x10000, PTE_R | PTE_W);
+
+  // gpio registers, size should be 0x10000,but ...
+  kvmmap(kpgtbl, GPIO, GPIO, 0x10000, PTE_R | PTE_W);
+
+  kvmmap(kpgtbl, CLKGEN, CLKGEN, 0x10000, PTE_R | PTE_W);
+
+  kvmmap(kpgtbl, RSTGEN, RSTGEN, 0x10000, PTE_R | PTE_W);
+
   // virtio mmio disk interface
   //kvmmap(kpgtbl, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
 
@@ -99,11 +112,8 @@ kvminithart()
   // wait for any previous writes to the page table memory to finish.
   sfence_vma();
 
-  printf("&kernel_pagetable %p, MAKE_SATP(kernel_pagetable) %p\r\n", &kernel_pagetable, MAKE_SATP(kernel_pagetable));
-  w_stvec((uint64)tvec);
-  intr_on();
   w_satp(MAKE_SATP(kernel_pagetable));
-  printf("etext %p, trampoline %p\r\n", etext, trampoline);
+
   // flush stale entries from the TLB.
   sfence_vma();
 }
@@ -193,7 +203,7 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
       return -1;
     if(*pte & PTE_V)
       panic("mappages: remap");
-    *pte = PA2PTE(pa) | perm | PTE_V;
+    *pte = PA2PTE(pa) | perm | PTE_V | PTE_A | PTE_D;
     if(a == last)
       break;
     a += PGSIZE;

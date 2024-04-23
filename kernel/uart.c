@@ -9,12 +9,12 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "ioport.h"
 
 // the UART control registers are memory-mapped
 // at address UART0. this macro returns the
 // address of one of the registers.
-#define UART3 0x12440000L
-#define Reg(reg) ((volatile unsigned char *)(UART3 + (reg << 2)))
+#define Reg(reg) ((volatile unsigned char *)(UART0 + (reg << 2)))
 
 // the UART control registers.
 // some have different meanings for
@@ -195,13 +195,13 @@ static unsigned int
 serial_in(int offset)
 {
   offset <<= 2;
-  return readl((volatile void *)(uint64)(UART3 + offset));
+  return readl((volatile void *)(uint64)(UART0 + offset));
 }
 
 static void serial_out(int offset, int value)
 {
   offset <<= 2;
-  writel(value,(volatile void *)(uint64)(UART3 + offset));
+  writel(value,(volatile void *)(uint64)(UART0 + offset));
 }
 
 #define UART_CLK        (100000000UL)

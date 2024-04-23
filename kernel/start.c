@@ -36,6 +36,7 @@ start()
   // delegate all interrupts and exceptions to supervisor mode.
   w_medeleg(0xffff);
   w_mideleg(0xffff);
+  //w_sie(r_sie() | SIE_SSIE);
   w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
   // configure Physical Memory Protection to give supervisor mode
@@ -89,4 +90,10 @@ timerinit()
 
   // enable machine-mode timer interrupts.
   w_mie(r_mie() | MIE_MTIE);
+}
+
+void
+pmstatus(uint64 sta)
+{
+  printf("hart %d mstatus %p sip %p.\r\n", cpuid(), sta, r_sip());
 }
