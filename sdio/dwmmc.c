@@ -180,8 +180,7 @@ static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
 	return ret;
 }
 
-#if 0
-#endif 
+
 static int dwmci_set_transfer_mode(struct dwmci_host *host,
 		struct mmc_data *data)
 {
@@ -204,7 +203,7 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 				 data ? DIV_ROUND_UP(data->blocks, 8) : 0);
 
 	int ret = 0, flags = 0, i;
-	unsigned int timeout = 100000;
+	unsigned int timeout = 10000;
 	u32 retry = 10000;
 	u32 mask, ctrl;
 	unsigned int start = get_timer(0);
@@ -326,8 +325,6 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 	return ret;
 }
 
-#if 0
-#endif
 
 static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 {
@@ -335,8 +332,9 @@ static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 	int timeout = 10000;
 	unsigned long sclk;
 
-	if ((freq == host->clock) || (freq == 0))
+	if ((freq == host->clock) || (freq == 0)) {
 		return 0;
+	}
 	/*
 	 * If host->get_mmc_clk isn't defined,
 	 * then assume that host->bus_hz is source clock value.
@@ -347,7 +345,7 @@ static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 	else if (host->bus_hz)
 		sclk = host->bus_hz;
 	else {
-		//printf("%s: Didn't get source clock value.\r\n", __func__);
+		printf("%s: Didn't get source clock value.\r\n", __func__);
 		return -EINVAL;
 	}
 
@@ -366,7 +364,7 @@ static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 	do {
 		status = dwmci_readl(host, DWMCI_CMD);
 		if (timeout-- < 0) {
-			//printf("%s: Timeout!\n", __func__);
+			printf("%s: Timeout!\n", __func__);
 			return -ETIMEDOUT;
 		}
 	} while (status & DWMCI_CMD_START);
@@ -381,7 +379,7 @@ static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 	do {
 		status = dwmci_readl(host, DWMCI_CMD);
 		if (timeout-- < 0) {
-			//printf("%s: Timeout!\r\n", __func__);
+			printf("%s: Timeout!\r\n", __func__);
 			return -ETIMEDOUT;
 		}
 	} while (status & DWMCI_CMD_START);
@@ -429,14 +427,17 @@ static int dwmci_init(struct mmc *mmc)
 {
 	struct dwmci_host *host = mmc->priv;
 
-	if (host->board_init)
+	if (host->board_init) {
+		printf("board_init\r\n");
 		host->board_init(host);
+	}
 
+	printf("host->ioaddr %x\r\n", host->ioaddr);
 	dwmci_writel(host, DWMCI_PWREN, 1);
 	udelay(100);
 
 	if (!dwmci_wait_reset(host, DWMCI_RESET_ALL)) {
-		printf("%s[%d] Fail-reset!!\n", __func__, __LINE__);
+		printf("\r\n%s[%d] Fail-reset!!\r\n", __func__, __LINE__);
 		return -EIO;
 	}
 

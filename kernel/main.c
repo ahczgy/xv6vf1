@@ -27,7 +27,7 @@ main()
     binit();         // buffer cache
     iinit();         // inode table
     fileinit();      // file table
-    gpioinit();	     // sd card
+    gpioinit();	     // gpio 
     sdioinit();
     //virtio_disk_init(); // emulated hard disk
     userinit();      // first user process

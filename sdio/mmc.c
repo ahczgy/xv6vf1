@@ -20,6 +20,9 @@
 
 //#include <uart.h>
 //#include <sys.h>
+//
+
+#define CONFIG_MMC_TRACE 1
 
 extern void printf(char *fmt, ...);
 extern struct mmc local_mmc0;
@@ -79,16 +82,71 @@ static int mmc_select_mode(struct mmc *mmc, enum bus_mode mode)
 	mmc->selected_mode = mode;
 	mmc->tran_speed = mmc_mode2freq(mmc, mode);
 	mmc->ddr_mode = mmc_is_mode_ddr(mode);
-//	printf("selecting mode %s (freq : %d MHz)\n", mmc_mode_name(mode),
-//		 mmc->tran_speed / 1000000);
+	printf("selecting mode %s (freq : %d MHz)\r\n", mmc_mode_name(mode),
+		 mmc->tran_speed / 1000000);
 	return 0;
 }
 
+void mmmc_trace_before_send(struct mmc *mmc, struct mmc_cmd *cmd)
+{
+  printf("CMD_SEND:%d ARG:%x\r\n", cmd->cmdidx, cmd->cmdarg);
+  //printf("ARG %p\r\n", cmd->cmdarg);
+}
+
+void mmmc_trace_after_send(struct mmc *mmc, struct mmc_cmd *cmd, int ret)
+{
+  int i;
+  u8 *ptr;
+
+  if (ret) {
+    printf("RET %d\r\n", ret);
+  } else {
+    switch(cmd->resp_type) {
+    case MMC_RSP_NONE:
+      printf("MMC_RSP_NONE\r\n");
+      break;
+    case MMC_RSP_R1:
+      printf("MMC_RSP_R1,5,6,7  %p \r\n", cmd->response[0]);
+      break;
+    case MMC_RSP_R1b:
+      printf("\t\tMMC_RSP_R1b\t\t %p \r\n",cmd->response[0]);
+      break;
+    case MMC_RSP_R2:
+      printf("MMC_RSP_R2 %p \r\n", cmd->response[0]);
+      printf("           %p \r\n", cmd->response[1]);
+      printf("           %p \r\n", cmd->response[2]);
+      printf("           %p \r\n", cmd->response[3]);
+      printf("\r\n");
+      printf("DUMPING DATA\r\n");
+      for(i = 0; i < 4; i++) {
+	int j;
+        printf("%d - ", i*4);
+        ptr = (u8*)&cmd->response[i];
+        ptr += 3;
+        for (j = 0; j < 4; j++)
+	  printf("%p ", *ptr--);
+        printf("\r\n");
+    }
+    break;
+    case MMC_RSP_R3:
+      printf("MMC_RSP_R3,4 %p \r\n", cmd->response[0]);
+      break;
+    default:
+       printf("ERROR MMC rsp not supported.\r\n");
+       break;
+    }
+  }
+}
+
+
 int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 {
-	int ret;
-    ret = mmc->cfg->ops->send_cmd(mmc, cmd, data);
-	return ret;
+  int ret;
+
+  mmmc_trace_before_send(mmc, cmd);
+  ret = mmc->cfg->ops->send_cmd(mmc, cmd, data);
+  //mmmc_trace_after_send(mmc, cmd, ret);
+  return ret;
 }
 
 int mmc_send_status(struct mmc *mmc, int timeout)
@@ -126,8 +184,7 @@ int mmc_send_status(struct mmc *mmc, int timeout)
 
 	return 0;
 }
-#if 0
-#endif 
+
 int mmc_set_blocklen(struct mmc *mmc, int len)
 {
 	struct mmc_cmd cmd;
@@ -1525,9 +1582,9 @@ struct mmc *mmc_create(const struct mmc_config *cfg, void *priv, u32 dev_num)
   mmc->block_dev.block_write = mmc_bwrite;
   mmc->block_dev.block_erase = mmc_berase;
 
-	/* setup initial part type */
-	mmc->block_dev.part_type = mmc->cfg->part_type;
-	return mmc;
+  /* setup initial part type */
+  mmc->block_dev.part_type = mmc->cfg->part_type;
+  return mmc;
 }
 
 
@@ -1637,7 +1694,7 @@ retry:
 		err = mmc_send_op_cond(mmc);
 
 		if (err) {
-			printf("Card did not respond to voltage select!\n");
+			printf("Card did not respond to voltage select!\r\n");
 			return -EOPNOTSUPP;
 		}
 	}

@@ -18,7 +18,7 @@
 // PHYSTOP -- end RAM used by the kernel
 
 // VisionFive v1 SDIO0 CSR put here
-#define SDIO0 0X100000000
+#define SDIO0 0x10000000L
 
 // qemu puts UART registers here in physical memory.
 //#define UART0 0x10000000L

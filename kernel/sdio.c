@@ -40,91 +40,54 @@ struct mmc local_mmc0;
 
 static void sdio0_gpio_mux_select()
 {
-   //set_gpio_sdio0_pad_card_detect_n(26);
-#if 0 //for fpga 
-    SET_GPIO_18_dout_sdio0_pad_cclk_out;
-    //SET_GPIO_18_doen_sdio0_pad_cclk_out;
-    SET_GPIO_18_doen_LOW;
-    //_SET_SYSCON_REG_register9_SCFG_gpio_pad_ctrl_9(5);
+  SET_GPIO_sdio0_pad_card_detect_n(26)
+  SET_GPIO_26_doen_HIGH;
 
-    SET_GPIO_17_doen_reverse_(1);
-    SET_GPIO_17_doen_sdio0_pad_ccmd_oe;
-    SET_GPIO_17_dout_sdio0_pad_ccmd_out;
-    SET_GPIO_sdio0_pad_ccmd_in(17);
+  SET_GPIO_33_dout_sdio0_pad_cclk_out;
+  SET_GPIO_33_doen_LOW;
 
-    SET_GPIO_15_doen_reverse_(1);
-    SET_GPIO_16_doen_reverse_(1);
-    SET_GPIO_19_doen_reverse_(1);
-    SET_GPIO_20_doen_reverse_(1);
+  SET_GPIO_34_doen_reverse_(1);
+  SET_GPIO_34_doen_sdio0_pad_ccmd_oe;
+  SET_GPIO_34_dout_sdio0_pad_ccmd_out;
+  SET_GPIO_sdio0_pad_ccmd_in(34);	
 
-    SET_GPIO_19_doen_sdio0_pad_cdata_oe_bit0;
-    SET_GPIO_19_dout_sdio0_pad_cdata_out_bit0;
-    SET_GPIO_sdio0_pad_cdata_in_bit0(19);
-   // _SET_SYSCON_REG_register9_SCFG_gpio_pad_ctrl_9(5);
+  SET_GPIO_32_doen_reverse_(1);
+  SET_GPIO_31_doen_reverse_(1);
+  SET_GPIO_30_doen_reverse_(1);
+  SET_GPIO_36_doen_reverse_(1);
 
-    SET_GPIO_20_doen_sdio0_pad_cdata_oe_bit1;
-    SET_GPIO_20_dout_sdio0_pad_cdata_out_bit1;
-    SET_GPIO_sdio0_pad_cdata_in_bit1(20);
-    //_SET_SYSCON_REG_register10_SCFG_gpio_pad_ctrl_10(5);
+  SET_GPIO_32_doen_sdio0_pad_cdata_oe_bit0;
+  SET_GPIO_32_dout_sdio0_pad_cdata_out_bit0;
+  SET_GPIO_sdio0_pad_cdata_in_bit0(32);
 
-    SET_GPIO_15_doen_sdio0_pad_cdata_oe_bit2;
-    SET_GPIO_15_dout_sdio0_pad_cdata_out_bit2;
-    SET_GPIO_sdio0_pad_cdata_in_bit2(15);
+  SET_GPIO_31_doen_sdio0_pad_cdata_oe_bit1;
+  SET_GPIO_31_dout_sdio0_pad_cdata_out_bit1;
+  SET_GPIO_sdio0_pad_cdata_in_bit1(31);
 
-    SET_GPIO_16_doen_sdio0_pad_cdata_oe_bit3;
-    SET_GPIO_16_dout_sdio0_pad_cdata_out_bit3;
-    SET_GPIO_sdio0_pad_cdata_in_bit3(16);
-#endif
+  SET_GPIO_30_doen_sdio0_pad_cdata_oe_bit2;
+  SET_GPIO_30_dout_sdio0_pad_cdata_out_bit2;
+  SET_GPIO_sdio0_pad_cdata_in_bit2(30);
 
-	SET_GPIO_sdio0_pad_card_detect_n(26)
-	SET_GPIO_26_doen_HIGH;
-
-	SET_GPIO_33_dout_sdio0_pad_cclk_out;
-	SET_GPIO_33_doen_LOW;
-
-	SET_GPIO_34_doen_reverse_(1);
-	SET_GPIO_34_doen_sdio0_pad_ccmd_oe;
-	SET_GPIO_34_dout_sdio0_pad_ccmd_out;
-	SET_GPIO_sdio0_pad_ccmd_in(34);	
-
-	SET_GPIO_32_doen_reverse_(1);
-	SET_GPIO_31_doen_reverse_(1);
-	SET_GPIO_30_doen_reverse_(1);
-	SET_GPIO_36_doen_reverse_(1);
-
-	SET_GPIO_32_doen_sdio0_pad_cdata_oe_bit0;
-	SET_GPIO_32_dout_sdio0_pad_cdata_out_bit0;
-	SET_GPIO_sdio0_pad_cdata_in_bit0(32);
-
-	SET_GPIO_31_doen_sdio0_pad_cdata_oe_bit1;
-	SET_GPIO_31_dout_sdio0_pad_cdata_out_bit1;
-	SET_GPIO_sdio0_pad_cdata_in_bit1(31);
-
-	SET_GPIO_30_doen_sdio0_pad_cdata_oe_bit2;
-	SET_GPIO_30_dout_sdio0_pad_cdata_out_bit2;
-	SET_GPIO_sdio0_pad_cdata_in_bit2(30);
-
-	SET_GPIO_36_doen_sdio0_pad_cdata_oe_bit3;
-	SET_GPIO_36_dout_sdio0_pad_cdata_out_bit3;
-	SET_GPIO_sdio0_pad_cdata_in_bit3(36);
-
+  SET_GPIO_36_doen_sdio0_pad_cdata_oe_bit3;
+  SET_GPIO_36_dout_sdio0_pad_cdata_out_bit3;
+  SET_GPIO_sdio0_pad_cdata_in_bit3(36);
 }
 
 
 static struct mmc *init_mmc_device(int dev, unsigned int  force_init)
 {
-    struct mmc *mmc; 
+  struct mmc *mmc; 
 
-	if(dev != 0)
-		return NULL;
+  if(dev != 0)
+    return NULL;
 	
-    mmc = &local_mmc0;
+  mmc = &local_mmc0;
 
-	if (force_init)
-		mmc->has_init = 0;
-	if (mmc_init(mmc))
-		return NULL;
-	return mmc;
+  if (force_init)
+    mmc->has_init = 0;
+  if (mmc_init(mmc))
+    return NULL;
+  return mmc;
 }
 
 
@@ -141,7 +104,8 @@ void sdioinit(void)
   sdio0_gpio_mux_select();
 
   host->fifoth_val = MSIZE(0x2) |
-  RX_WMARK(fifo_depth / 2 - 1) | TX_WMARK(fifo_depth / 2);
+  		     RX_WMARK(fifo_depth / 2 - 1) | 
+		     TX_WMARK(fifo_depth / 2);
 
   host->buswidth = 4;
   host->bus_hz = DWMMC_BUS_FREQ;
@@ -153,7 +117,7 @@ void sdioinit(void)
 
   if(init_mmc_device(0, 0) == 0)
   {
-     printf("init dev fail.");
+     printf("init dev fail.\r\n");
   }
 }
 
