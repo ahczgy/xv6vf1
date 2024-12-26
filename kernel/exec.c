@@ -22,6 +22,7 @@ int flags2perm(int flags)
 int
 exec(char *path, char **argv)
 {
+  exit(0);
   char *s, *last;
   int i, off;
   uint64 argc, sz = 0, sp, ustack[MAXARG], stackbase;
@@ -31,13 +32,16 @@ exec(char *path, char **argv)
   pagetable_t pagetable = 0, oldpagetable;
   struct proc *p = myproc();
 
+
   begin_op();
 
+  printf("exec() mhartid=%d.\r\n", cpuid());
   if((ip = namei(path)) == 0){
     end_op();
     return -1;
   }
   ilock(ip);
+
 
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))

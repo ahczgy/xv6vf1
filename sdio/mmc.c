@@ -82,14 +82,14 @@ static int mmc_select_mode(struct mmc *mmc, enum bus_mode mode)
 	mmc->selected_mode = mode;
 	mmc->tran_speed = mmc_mode2freq(mmc, mode);
 	mmc->ddr_mode = mmc_is_mode_ddr(mode);
-	printf("selecting mode %s (freq : %d MHz)\r\n", mmc_mode_name(mode),
-		 mmc->tran_speed / 1000000);
+	//printf("selecting mode %s (freq : %d MHz)\r\n", mmc_mode_name(mode),
+	//	 mmc->tran_speed / 1000000);
 	return 0;
 }
 
 void mmmc_trace_before_send(struct mmc *mmc, struct mmc_cmd *cmd)
 {
-  printf("CMD_SEND:%d ARG:%x\r\n", cmd->cmdidx, cmd->cmdarg);
+  printf("CMD_SEND:%d ARG:%p\r\n", cmd->cmdidx, cmd->cmdarg);
   //printf("ARG %p\r\n", cmd->cmdarg);
 }
 
@@ -145,7 +145,7 @@ int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
   mmmc_trace_before_send(mmc, cmd);
   ret = mmc->cfg->ops->send_cmd(mmc, cmd, data);
-  //mmmc_trace_after_send(mmc, cmd, ret);
+  mmmc_trace_after_send(mmc, cmd, ret);
   return ret;
 }
 
@@ -239,7 +239,7 @@ static int mmc_read_blocks(struct mmc *mmc, void *dst, unsigned long start,
 static unsigned long mmc_bread(int dev_num, unsigned long start, unsigned long blkcnt, void *dst)
 {
 	unsigned long cur, blocks_todo = blkcnt;
-    struct mmc *mmc;
+    	struct mmc *mmc;
 
 	if (blkcnt == 0)
 		return 0;
@@ -249,6 +249,8 @@ static unsigned long mmc_bread(int dev_num, unsigned long start, unsigned long b
 	if (!mmc)
 		return 0;
 
+	
+	printf("%s nunmber of blocks %d\r\n", __func__, mmc->block_dev.lba);
 	if ((start + blkcnt) > mmc->block_dev.lba) {
 		return 0;
 	}
@@ -287,7 +289,7 @@ static int mmc_go_idle(struct mmc *mmc)
 	if (err)
 		return err;
 
-	udelay(200);
+	udelay(2000);
 	return 0;
 }
 
@@ -339,6 +341,7 @@ static int sd_send_op_cond(struct mmc *mmc, bool uhs_en)
 
 		udelay(1000);
 	}
+	printf("%s 55, 41 cmd completed.\r\n", __func__);
 
 	if (mmc->version != SD_VERSION_2)
 		mmc->version = SD_VERSION_1_0;
@@ -468,6 +471,8 @@ static int mmc_send_ext_csd(struct mmc *mmc, u8 *ext_csd)
 	data.blocks = 1;
 	data.blocksize = MMC_MAX_BLOCK_LEN;
 	data.flags = MMC_DATA_READ;
+
+	printf("%s CMD %d\r\n", __func__, cmd.cmdidx);
 
 	err = mmc_send_cmd(mmc, &cmd, &data);
 
@@ -721,9 +726,11 @@ retry_scr:
 		if (err)
 			return err;
 
+		//printf("%s ARG %s timeout %d\r\n", __func__, cmd.cmdarg, timeout);
 		/* The high-speed function is busy.  Try again */
-		if (!(__be32_to_cpu(switch_status[7]) & SD_HIGHSPEED_BUSY))
+		if (!(__be32_to_cpu(switch_status[7]) & SD_HIGHSPEED_BUSY)) {
 			break;
+		}
 	}
 
 	/* If high-speed isn't supported, we return */
@@ -889,12 +896,14 @@ static const int multipliers[] = {
 
 static void mmc_set_ios(struct mmc *mmc)
 {
-	if (mmc->cfg->ops->set_ios)
+	if (mmc->cfg->ops->set_ios) {
 		mmc->cfg->ops->set_ios(mmc);
+	}
 }
 
 void mmc_set_clock(struct mmc *mmc, u32 clock, bool disable)
 {
+	//printf("clock is %s (%dHz)\r\n", disable ? "disabled" : "enabled", clock);
 	if (!disable) {
 		if (clock > mmc->cfg->f_max)
 			clock = mmc->cfg->f_max;
@@ -906,7 +915,6 @@ void mmc_set_clock(struct mmc *mmc, u32 clock, bool disable)
 	mmc->clock = clock;
 	mmc->clk_disable = disable;
 
-	printf("clock is %s (%dHz)\r\n", disable ? "disabled" : "enabled", clock);
 
 	mmc_set_ios(mmc);
 }
@@ -1517,6 +1525,7 @@ static int mmc_startup(struct mmc *mmc)
 	mmc->block_dev.lun = 0;
 	mmc->block_dev.hwpart = 0;
 	mmc->block_dev.type = 0;
+
 	mmc->block_dev.blksz = mmc->read_bl_len;
 	mmc->block_dev.log2blksz = LOG2(mmc->block_dev.blksz);
 	mmc->block_dev.lba = lldiv(mmc->capacity, mmc->read_bl_len);
@@ -1524,6 +1533,7 @@ static int mmc_startup(struct mmc *mmc)
 	mmc->block_dev.vendor[0] = 0;
 	mmc->block_dev.product[0] = 0;
 	mmc->block_dev.revision[0] = 0;
+
 
 	return 0;
 }
@@ -1575,6 +1585,7 @@ struct mmc *mmc_create(const struct mmc_config *cfg, void *priv, u32 dev_num)
   mmc->dsr = 0xffffffff;
 
   /* Setup the universal parts of the block interface just once */
+  // mmc->block_dev.if_type = IF_TYPE_MMC;
   mmc->block_dev.if_type = IF_TYPE_MMC;
   mmc->block_dev.dev = cur_dev_num++;
   mmc->block_dev.removable = 1;
@@ -1823,7 +1834,6 @@ int mmc_init(struct mmc *mmc)
 	if (mmc->has_init)
 		return 0;
 
-	//start = get_timer(0);
 
 	if (!mmc->init_in_progress)
 		err = mmc_start_init(mmc);

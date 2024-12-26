@@ -462,6 +462,7 @@ sys_exec(void)
   }
 
   int ret = exec(path, argv);
+  printf("sys_exec mhartid=%d\r\n", cpuid());
 
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
     kfree(argv[i]);

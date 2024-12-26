@@ -63,6 +63,7 @@ void            ramdiskrw(struct buf*);
 void*           kalloc(void);
 void            kfree(void *);
 void            kinit(void);
+int		get_num_of_free_pages(void);
 
 // log.c
 void            initlog(int, struct superblock*);
@@ -106,6 +107,7 @@ void            yield(void);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
+void		proc_print(void);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
@@ -151,6 +153,7 @@ void		tvec(void);
 
 // uart.c
 void            uartinit(void);
+void            uartinit_old(void);
 void            uartintr(void);
 void            uartputc(int);
 void            uartputc_sync(int);
@@ -188,8 +191,9 @@ void            virtio_disk_init(void);
 void            virtio_disk_rw(struct buf *, int);
 void            virtio_disk_intr(void);
 
-//sdcard.c
-void		gpioinit(void);
+//gpio.c
+void		board_init_f(void);
+void		boot_device(void);
 
 //sdio.c
 void		sdioinit(void);

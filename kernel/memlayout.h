@@ -17,24 +17,33 @@
 // end -- start of kernel page allocation area
 // PHYSTOP -- end RAM used by the kernel
 
-// VisionFive v1 SDIO0 CSR put here
-#define SDIO0 0x10000000L
+#define ROMADDR 0x1000L
+
+// StarFive v2 SDIO1 CSR put here
+#define SDIO1 0x16020000L
+#define SDIO1_IRQ 75 
+
+#define SDIO0 0x16010000L
+
+// Starfive2 spi CSR put here
+#define SPI0 0x10060000
+#define SPI0_IRQ 38
 
 // qemu puts UART registers here in physical memory.
-//#define UART0 0x10000000L
-#define UART0 0x12440000L
-#define UART0_IRQ 10
+#define UART0 0x10000000UL
+#define UART0_IRQ 32 
 
-#define CLKGEN 0x11800000L
+#define CLKGEN 0x13020000L
 #define CLKGEN_GPIO_APB_CTRL (CLKGEN + 0x278)
 
-#define RSTGEN 0x11840000L
+#define RSTGEN 0x13030000L
 #define RSTGEN_ASSERT2 (RSTGEN + 0x8)
 #define RSTGEN_STATUS2 (RSTGEN + 0x18)
 
-// Visionfive v1 gpio in interface
-#define GPIO 0x11910000L
+// Visionfive2  gpio in interface
+#define GPIO 0x13040000L
 #define EZGPIO_FULLMUX_BASE_ADDR GPIO
+#define GPIO_IRQ 86 
 
 #define U74CACHE 0x0002010000L
 
@@ -63,8 +72,9 @@
 // the kernel expects there to be RAM
 // for use by the kernel and user pages
 // from physical address 0x80000000 to PHYSTOP.
-#define KERNBASE 0x80000000L
-#define PHYSTOP (KERNBASE + 22*1024*1024)
+//#define KERNBASE 0x80000000L
+#define KERNBASE 0x40000000L
+#define PHYSTOP (KERNBASE + 128*1024*1024)
 
 // map the trampoline page to the highest address,
 // in both user and kernel space.

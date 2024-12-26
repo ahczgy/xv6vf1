@@ -75,7 +75,7 @@ main(int argc, char *argv[])
   struct dinode din;
 
 
-  static_assert(sizeof(int) == 4, "Integers must be 4 bytes!");
+  static_assert(sizeof(unsigned) == 4, "Integers must be 4 bytes!");
 
   if(argc < 2){
     fprintf(stderr, "Usage: mkfs fs.img files...\n");

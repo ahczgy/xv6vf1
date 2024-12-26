@@ -18,6 +18,8 @@ struct spinlock pid_lock;
 extern void forkret(void);
 static void freeproc(struct proc *p);
 
+extern void kputchar(char);
+
 extern char trampoline[]; // trampoline.S
 
 // helps ensure that wakeups of wait()ing
@@ -25,6 +27,13 @@ extern char trampoline[]; // trampoline.S
 // memory model when using p->parent.
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
+
+
+void
+proc_print(void)
+{
+	printf("%s\r\n", __func__);
+}
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
@@ -64,6 +73,7 @@ procinit(void)
 int
 cpuid()
 {
+  //kputchar('M');
   int id = r_tp();
   return id;
 }
@@ -449,11 +459,12 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   
+  //printf("hart %d in scheduler().\r\n", cpuid());
   c->proc = 0;
   for(;;){
 
     // Avoid deadlock by ensuring that devices can interrupt.
-    intr_on();
+    //intr_on();
 
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
@@ -529,7 +540,7 @@ forkret(void)
     // be run from main().
     first = 0;
     //printf("Hart %d in forkret().\r\n", cpuid());
-    //fsinit(ROOTDEV);
+    fsinit(ROOTDEV);
   }
 
   usertrapret();

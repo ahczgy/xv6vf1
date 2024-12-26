@@ -72,7 +72,7 @@ unsigned long mmc_berase(int dev_num, unsigned int start, unsigned int blkcnt)
 {
 	int err = 0;
 	u32 start_rem, blkcnt_rem;
-    struct mmc *mmc; 
+    	struct mmc *mmc; 
 	if(dev_num == 0)
         mmc = &local_mmc0;
 	unsigned int blk = 0, blk_r = 0;

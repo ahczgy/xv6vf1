@@ -72,8 +72,9 @@
 
 /* Raw interrupt Regsiter */
 #define DWMCI_DATA_ERR	(DWMCI_INTMSK_EBE | DWMCI_INTMSK_SBE | DWMCI_INTMSK_HLE |\
-			DWMCI_INTMSK_FRUN | DWMCI_INTMSK_EBE | DWMCI_INTMSK_DCRC)
+			DWMCI_INTMSK_FRUN | DWMCI_INTMSK_DCRC)
 #define DWMCI_DATA_TOUT	(DWMCI_INTMSK_HTO | DWMCI_INTMSK_DRTO)
+//#define DWMCI_DATA_TOUT	(DWMCI_INTMSK_DRTO)
 /* CTRL register */
 #define DWMCI_CTRL_RESET	(1 << 0)
 #define DWMCI_CTRL_FIFO_RESET	(1 << 1)
@@ -130,6 +131,13 @@
 
 /* UHS register */
 #define DWMCI_DDR_MODE	(1 << 16)
+
+/* Internal IDMAC interrupt defines */
+#define DWMCI_IDINTEN_RI                BIT(1)
+#define DWMCI_IDINTEN_TI                BIT(0)
+
+#define DWMCI_IDINTEN_MASK      (DWMCI_IDINTEN_TI | \
+		                                 DWMCI_IDINTEN_RI)
 
 /* quirks */
 #define DWMCI_QUIRK_DISABLE_SMU		(1 << 0)

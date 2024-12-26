@@ -38,39 +38,41 @@ struct mmc local_mmc0;
 #define GPT_BLOCK_SIZE 512
 
 
-static void sdio0_gpio_mux_select()
+static void sdio1_gpio_mux_select()
 {
-  SET_GPIO_sdio0_pad_card_detect_n(26)
-  SET_GPIO_26_doen_HIGH;
+/*
+  SET_GPIO_sdio0_pad_card_detect_n(55)
+  SET_GPIO_55_doen_LOW;
 
-  SET_GPIO_33_dout_sdio0_pad_cclk_out;
-  SET_GPIO_33_doen_LOW;
+  SET_GPIO_10_dout_sdio1_pad_cclk_out;
+  SET_GPIO_10_doen_HIGH;
 
-  SET_GPIO_34_doen_reverse_(1);
-  SET_GPIO_34_doen_sdio0_pad_ccmd_oe;
-  SET_GPIO_34_dout_sdio0_pad_ccmd_out;
-  SET_GPIO_sdio0_pad_ccmd_in(34);	
+  SET_GPIO_9_doen_reverse_(1);
+  SET_GPIO_9_doen_sdio1_pad_ccmd_oe;
+  SET_GPIO_0_dout_sdio1_pad_ccmd_out;
+  SET_GPIO_sdio1_pad_ccmd_in(9);	
 
-  SET_GPIO_32_doen_reverse_(1);
-  SET_GPIO_31_doen_reverse_(1);
-  SET_GPIO_30_doen_reverse_(1);
-  SET_GPIO_36_doen_reverse_(1);
+  SET_GPIO_7_doen_reverse_(1);
+  SET_GPIO_8_doen_reverse_(1);
+  SET_GPIO_11_doen_reverse_(1);
+  SET_GPIO_12_doen_reverse_(1);
 
-  SET_GPIO_32_doen_sdio0_pad_cdata_oe_bit0;
-  SET_GPIO_32_dout_sdio0_pad_cdata_out_bit0;
-  SET_GPIO_sdio0_pad_cdata_in_bit0(32);
+  SET_GPIO_11_doen_sdio1_pad_cdata_oe_bit0;
+  SET_GPIO_11_dout_sdio1_pad_cdata_out_bit0;
+  SET_GPIO_sdio1_pad_cdata_in_bit0(11);
 
-  SET_GPIO_31_doen_sdio0_pad_cdata_oe_bit1;
-  SET_GPIO_31_dout_sdio0_pad_cdata_out_bit1;
-  SET_GPIO_sdio0_pad_cdata_in_bit1(31);
+  SET_GPIO_12_doen_sdio1_pad_cdata_oe_bit1;
+  SET_GPIO_12_dout_sdio1_pad_cdata_out_bit1;
+  SET_GPIO_sdio1_pad_cdata_in_bit1(12);
 
-  SET_GPIO_30_doen_sdio0_pad_cdata_oe_bit2;
-  SET_GPIO_30_dout_sdio0_pad_cdata_out_bit2;
-  SET_GPIO_sdio0_pad_cdata_in_bit2(30);
+  SET_GPIO_7_doen_sdio1_pad_cdata_oe_bit2;
+  SET_GPIO_7_dout_sdio1_pad_cdata_out_bit2;
+  SET_GPIO_sdio1_pad_cdata_in_bit2(7);
 
-  SET_GPIO_36_doen_sdio0_pad_cdata_oe_bit3;
-  SET_GPIO_36_dout_sdio0_pad_cdata_out_bit3;
-  SET_GPIO_sdio0_pad_cdata_in_bit3(36);
+  SET_GPIO_8_doen_sdio1_pad_cdata_oe_bit3;
+  SET_GPIO_8_dout_sdio1_pad_cdata_out_bit3;
+  SET_GPIO_sdio1_pad_cdata_in_bit3(8);
+ */
 }
 
 
@@ -98,10 +100,10 @@ void sdioinit(void)
 
   /*HOST 0*/
   host = &local_host0;
-  host->ioaddr = (void *)SDIO0;
+  host->ioaddr = (void *)SDIO1;
   host->name = "VIC DWMMC0";
   host->dev_index = 0;
-  sdio0_gpio_mux_select();
+  sdio1_gpio_mux_select();
 
   host->fifoth_val = MSIZE(0x2) |
   		     RX_WMARK(fifo_depth / 2 - 1) | 

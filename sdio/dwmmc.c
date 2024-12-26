@@ -11,7 +11,6 @@
 //#include <timer.h>
 //#include "errno.h"
 
-//#include "../kernel/types.h"
 #include "bouncebuf.h"
 #include "comdef.h"
 #include "mmc.h"
@@ -20,6 +19,7 @@
 #include "errno.h"
 
 extern void printf(char *fmt, ...);
+extern void proc_print(void);
 
 #define PAGE_SIZE 4096
 
@@ -121,12 +121,13 @@ static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
 		mask = dwmci_readl(host, DWMCI_RINTSTS);
 		/* Error during data transfer. */
 		if (mask & (DWMCI_DATA_ERR | DWMCI_DATA_TOUT)) {
-			printf("%s: DATA ERROR! mask:0x%x  0x%x\r\n", __func__,mask,(DWMCI_DATA_ERR | DWMCI_DATA_TOUT));
+			printf("%s DATA ERROR! mask 0x%x  0x%x\r\n", __func__,mask,(DWMCI_DATA_ERR | DWMCI_DATA_TOUT));
 			ret = -EINVAL;
 			break;
 		}
 
 		if (host->fifo_mode && size) {
+			printf("%s host->fifo_mode\r\n", __func__);
 			len = 0;
 			if (data->flags == MMC_DATA_READ &&
 			    (mask & DWMCI_INTMSK_RXDR)) {
@@ -203,7 +204,7 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 				 data ? DIV_ROUND_UP(data->blocks, 8) : 0);
 
 	int ret = 0, flags = 0, i;
-	unsigned int timeout = 10000;
+	unsigned int timeout = 100000;
 	u32 retry = 10000;
 	u32 mask, ctrl;
 	unsigned int start = get_timer(0);
@@ -211,8 +212,7 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 
 	while ((dwmci_readl(host, DWMCI_STATUS) & DWMCI_BUSY)) {
 		if (get_timer(start) > timeout) {
-
-			printf("%s: Timeout on data busy\r\n", __func__);
+			printf("%s: Timeout on data busy.\r\n", __func__);
 			return -ETIMEDOUT;
 		}
 	}
@@ -253,20 +253,25 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 	else
 		flags |= DWMCI_CMD_PRV_DAT_WAIT;
 
+
 	if (cmd->resp_type & MMC_RSP_PRESENT) {
 		flags |= DWMCI_CMD_RESP_EXP;
 		if (cmd->resp_type & MMC_RSP_136)
 			flags |= DWMCI_CMD_RESP_LENGTH;
 	}
 
+
 	if (cmd->resp_type & MMC_RSP_CRC)
 		flags |= DWMCI_CMD_CHECK_CRC;
 
+
 	flags |= (cmd->cmdidx | DWMCI_CMD_START | DWMCI_CMD_USE_HOLD_REG);
 
-//	printf("Sending CMD%d\r\n",cmd->cmdidx);
+
+	//printf("Sending CMD%p, flags :%p\r\n", cmd->cmdidx, flags);
 
 	dwmci_writel(host, DWMCI_CMD, flags);
+
 
 	for (i = 0; i < retry; i++) {
 		mask = dwmci_readl(host, DWMCI_RINTSTS);
@@ -329,7 +334,7 @@ static int dwmci_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 {
 	u32 div, status;
-	int timeout = 10000;
+	int timeout = 100000;
 	unsigned long sclk;
 
 	if ((freq == host->clock) || (freq == 0)) {
@@ -340,9 +345,10 @@ static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 	 * then assume that host->bus_hz is source clock value.
 	 * host->bus_hz should be set by user.
 	 */
-	if (host->get_mmc_clk)
+	if (host->get_mmc_clk) {
+		printf("%s: Timeout!\n", __func__);
 		sclk = host->get_mmc_clk(host, freq);
-	else if (host->bus_hz)
+	} else if (host->bus_hz)
 		sclk = host->bus_hz;
 	else {
 		printf("%s: Didn't get source clock value.\r\n", __func__);
@@ -375,7 +381,7 @@ static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 	dwmci_writel(host, DWMCI_CMD, DWMCI_CMD_PRV_DAT_WAIT |
 			DWMCI_CMD_UPD_CLK | DWMCI_CMD_START);
 
-	timeout = 10000;
+	timeout = 100000;
 	do {
 		status = dwmci_readl(host, DWMCI_CMD);
 		if (timeout-- < 0) {
@@ -388,6 +394,7 @@ static int dwmci_setup_bus(struct dwmci_host *host, u32 freq)
 
 	return 0;
 }
+
 
 static void dwmci_set_ios(struct mmc *mmc)
 {
@@ -432,7 +439,6 @@ static int dwmci_init(struct mmc *mmc)
 		host->board_init(host);
 	}
 
-	printf("host->ioaddr %x\r\n", host->ioaddr);
 	dwmci_writel(host, DWMCI_PWREN, 1);
 	udelay(100);
 
@@ -461,25 +467,34 @@ static int dwmci_init(struct mmc *mmc)
 				TX_WMARK(fifo_size / 2);
 	}
 	dwmci_writel(host, DWMCI_FIFOTH, host->fifoth_val);
+        if (!host->fifo_mode) {
+	  printf("debug %s line %d\r\n", __func__, __LINE__);
+          dwmci_writel(host, DWMCI_IDINTEN, DWMCI_IDINTEN_MASK);
+	}
 
 	dwmci_writel(host, DWMCI_CLKENA, 0);
 	dwmci_writel(host, DWMCI_CLKSRC, 0);
 
 	return 0;
-}
+} 
 
 
-static const struct mmc_ops dwmci_ops = {
+static  struct mmc_ops dwmci_ops = {
 	.send_cmd	= dwmci_send_cmd,
 	.set_ios	= dwmci_set_ios,
 	.init		= dwmci_init,
+	.test		= proc_print,
 };
-
 
 int add_dwmci(struct dwmci_host *host, u32 max_clk, u32 min_clk,u32 dev_num)
 {
 	host->cfg.name = host->name;
-	host->cfg.ops = &dwmci_ops;
+	host->cfg.ops = &dwmci_ops;               // It's so strange, it dose'nt work.
+						  // and needs the following three codes.
+	host->cfg.ops->send_cmd = dwmci_send_cmd;
+	host->cfg.ops->set_ios = dwmci_set_ios;
+	host->cfg.ops->init = dwmci_init;
+
 	host->cfg.f_min = min_clk;
 	host->cfg.f_max = max_clk;
 

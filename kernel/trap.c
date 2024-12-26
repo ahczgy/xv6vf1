@@ -38,7 +38,7 @@ usertrap(void)
 {
   int which_dev = 0;
 
-  //printf("Hart %d in usertrap, sscause %p\r\n", cpuid(), r_scause());
+  printf("Hart %d in usertrap, sscause %p\r\n", cpuid(), r_scause());
   if((r_sstatus() & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
 
@@ -146,6 +146,7 @@ kerneltrap()
   if(intr_get() != 0)
     panic("kerneltrap: interrupts enabled");
 
+  //printf("kerneltrap scause %p cpuid=%d\r\n", scause, cpuid());
   if((which_dev = devintr()) == 0){
     printf("scause %p\r\n", scause);
     printf("sepc=%p stval=%p\r\n", r_sepc(), r_stval());
@@ -190,10 +191,11 @@ devintr()
 
     if(irq == UART0_IRQ){
       uartintr();
-    } else if(irq == VIRTIO0_IRQ){
-      virtio_disk_intr();
+    } else if(irq == SDIO1_IRQ){
+      printf("hart %d interrupt irq %d, mhartid=%d\r\n", cpuid(), irq);
+      //virtio_disk_intr();
     } else if(irq){
-      printf("Hart %d unexpected interrupt irq=%d\r\n", cpuid(), irq);
+      printf("unexpected interrupt irq=%d, mhartid=%d\r\n", irq, cpuid());
     }
 
     // the PLIC allows each device to raise at most one
@@ -204,13 +206,13 @@ devintr()
 
     return 1;
   } else if(scause == 0x8000000000000001L){
-    printf("software interrupt from a machine-mode timer interrupt forwarded by timervec in kernelvec.S\r\n");
+    printf("software interrupt from a machine-mode of mhartid %d timer interrupt forwarded by timervec in kernelvec.S\r\n", cpuid());
     // software interrupt from a machine-mode timer interrupt,
     // forwarded by timervec in kernelvec.S.
 
-    if(cpuid() == 0){
+    if(cpuid() == 1){
       clockintr();
-    }
+   }
     
     // acknowledge the software interrupt by clearing
     // the SSIP bit in sip.

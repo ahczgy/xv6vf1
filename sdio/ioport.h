@@ -17,10 +17,10 @@
 
 
 #ifndef readl
-static inline u32
-readl(const volatile void *addr)
+static inline uint32
+readl(volatile void *addr)
 {
-   u32 val;
+   uint32 val;
    asm volatile("lw %0, 0(%1)" : "=r"(val) : "r"(addr));
    return val;
 }

@@ -40,9 +40,13 @@ readsb(int dev, struct superblock *sb)
 // Init fs
 void
 fsinit(int dev) {
+  printf("%s sb.magic %x\r\n", __func__, sb.magic);
   readsb(dev, &sb);
-  if(sb.magic != FSMAGIC)
+  printf("%s sb.magic %x\r\n", __func__, sb.magic);
+  for(;;);
+  if(sb.magic != FSMAGIC) {
     panic("invalid file system");
+  }
   initlog(dev, &sb);
 }
 
@@ -249,6 +253,7 @@ iget(uint dev, uint inum)
   struct inode *ip, *empty;
 
   acquire(&itable.lock);
+  //printf("iget() mhartid=%d\r\n", cpuid());
 
   // Is the inode already in the table?
   empty = 0;

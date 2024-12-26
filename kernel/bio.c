@@ -23,6 +23,10 @@
 #include "fs.h"
 #include "buf.h"
 
+#include <mmc.h>
+
+extern struct mmc local_mmc0;
+
 struct {
   struct spinlock lock;
   struct buf buf[NBUF];
@@ -96,7 +100,8 @@ bread(uint dev, uint blockno)
 
   b = bget(dev, blockno);
   if(!b->valid) {
-    virtio_disk_rw(b, 0);
+    local_mmc0.block_dev.block_read(0, 2, 2, b->data);
+    //virtio_disk_rw(b, 0);
     b->valid = 1;
   }
   return b;

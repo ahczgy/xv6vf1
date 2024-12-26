@@ -17,7 +17,8 @@ extern char trampoline[]; // trampoline.S
 			  //
 extern char end[];
 
-void mmu(uint64);
+extern struct kmem kmem;
+
 
 static inline void xstatus_show(void);
 
@@ -30,16 +31,22 @@ kvmmake(void)
   kpgtbl = (pagetable_t) kalloc();
   memset(kpgtbl, 0, PGSIZE);
 
+  //printf("hart %d kpgtbl %p free pages %d\r\n",cpuid(), kpgtbl, get_num_of_free_pages());
   // uart registers
-  kvmmap(kpgtbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+  kvmmap(kpgtbl, UART0, UART0, 0x10000, PTE_R | PTE_W);
 
   // clint registers
   kvmmap(kpgtbl, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
 
   // sdio0 registers
+  kvmmap(kpgtbl, SDIO1, SDIO1, 0x10000, PTE_R | PTE_W);
+
   kvmmap(kpgtbl, SDIO0, SDIO0, 0x10000, PTE_R | PTE_W);
 
-  // gpio registers, size should be 0x10000,but ...
+  // spi0 registers
+  kvmmap(kpgtbl, SPI0, SPI0, 0x10000, PTE_R | PTE_W);
+
+  // gpio registers
   kvmmap(kpgtbl, GPIO, GPIO, 0x10000, PTE_R | PTE_W);
 
   kvmmap(kpgtbl, CLKGEN, CLKGEN, 0x10000, PTE_R | PTE_W);
@@ -50,15 +57,14 @@ kvmmake(void)
   //kvmmap(kpgtbl, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
 
   // u74 core L2 cache controller
-  kvmmap(kpgtbl, U74CACHE, U74CACHE, PGSIZE, PTE_R | PTE_W);
+  //kvmmap(kpgtbl, U74CACHE, U74CACHE, PGSIZE, PTE_R | PTE_W);
 
   // u74 l2 lim, what is the fuck?:-(
-  kvmmap(kpgtbl, U74L2LIM, U74L2LIM, 0x200000, PTE_R | PTE_W);
+  //kvmmap(kpgtbl, U74L2LIM, U74L2LIM, 0x200000, PTE_R | PTE_W);
  
   // PLIC
-  kvmmap(kpgtbl, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+  kvmmap(kpgtbl, PLIC, PLIC, 0x4000000, PTE_R | PTE_W);
 
-  //printf("etext %p KERNBAE %p etext-KERNBASE %p\r\n", etext, KERNBASE,(uint64)(etext - KERNBASE));
   kvmmap(kpgtbl, KERNBASE, KERNBASE, (uint64)etext-KERNBASE, PTE_R | PTE_X);
 
   // map kernel data and the physical RAM we'll make use of.
@@ -71,6 +77,7 @@ kvmmake(void)
 
   // allocate and map a kernel stack for each process.
   proc_mapstacks(kpgtbl);
+  //printf("etext %p KERNBAE %p etext-KERNBASE %p\r\n", etext, KERNBASE,(uint64)(etext - KERNBASE));
 
   //vmprint(kpgtbl);
   
@@ -143,6 +150,7 @@ walk(pagetable_t pagetable, uint64 va, int alloc)
     } else {
       if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)
         return 0;
+      //printf("hart %d walk() get page addr %p\r\n",cpuid(), pagetable);
       memset(pagetable, 0, PGSIZE);
       *pte = PA2PTE(pagetable) | PTE_V;
     }
@@ -201,8 +209,10 @@ mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
   for(;;){
     if((pte = walk(pagetable, a, 1)) == 0)
       return -1;
-    if(*pte & PTE_V)
+    if(*pte & PTE_V) {
       panic("mappages: remap");
+      printf("hart %d kpgtbl %p free pages %d\r\n",cpuid(), pa, get_num_of_free_pages());
+    }
     *pte = PA2PTE(pa) | perm | PTE_V | PTE_A | PTE_D;
     if(a == last)
       break;

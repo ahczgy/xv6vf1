@@ -6,6 +6,7 @@
 
 void main();
 void timerinit();
+extern void kputchar(char);
 
 // entry.S needs one stack per CPU.
 __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
@@ -20,6 +21,25 @@ extern void timervec();
 void
 start()
 {
+/*
+  switch (id) {
+    case 0:
+      kputchar('A');
+      break;
+    case 1:
+      kputchar('B');
+      break;
+    case 2:
+      kputchar('C');
+      break;
+    case 3:
+      kputchar('D');
+      break;
+    default: 
+      kputchar('E');
+      break;
+   }
+*/
   // set M Previous Privilege mode to Supervisor, for mret.
   unsigned long x = r_mstatus();
   x &= ~MSTATUS_MPP_MASK;
@@ -36,14 +56,13 @@ start()
   // delegate all interrupts and exceptions to supervisor mode.
   w_medeleg(0xffff);
   w_mideleg(0xffff);
-  //w_sie(r_sie() | SIE_SSIE);
   w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
   // configure Physical Memory Protection to give supervisor mode
   // access to all of physical memory.
   w_pmpaddr0(0x3fffffffffffffull);
   w_pmpcfg0(0xf);
-  asm volatile("csrw pmpcfg2, zero");
+  //asm volatile("csrw pmpcfg2, zero");
 
   // ask for clock interrupts.
   timerinit();
@@ -90,10 +109,5 @@ timerinit()
 
   // enable machine-mode timer interrupts.
   w_mie(r_mie() | MIE_MTIE);
-}
-
-void
-pmstatus(uint64 sta)
-{
-  printf("hart %d mstatus %p sip %p.\r\n", cpuid(), sta, r_sip());
+  //kputchar('G');
 }

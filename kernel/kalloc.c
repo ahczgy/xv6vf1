@@ -9,6 +9,7 @@
 #include "riscv.h"
 #include "defs.h"
 
+static int freepages = 0;
 void freerange(void *pa_start, void *pa_end);
 
 extern char end[]; // first address after kernel.
@@ -37,6 +38,7 @@ freerange(void *pa_start, void *pa_end)
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
     kfree(p);
+  //printf("hart %d add page %p to list. total pages %d\r\n", cpuid(), (p-PGSIZE), freepages);
 }
 
 // Free the page of physical memory pointed at by pa,
@@ -59,6 +61,7 @@ kfree(void *pa)
   acquire(&kmem.lock);
   r->next = kmem.freelist;
   kmem.freelist = r;
+  ++freepages;
   release(&kmem.lock);
 }
 
@@ -72,11 +75,26 @@ kalloc(void)
 
   acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
+  if(r) {
     kmem.freelist = r->next;
+  }
   release(&kmem.lock);
 
   if(r)
-    memset((char*)r, 5, PGSIZE); // fill with junk
+    //memset((char*)r, 5, PGSIZE); // fill with junk
+    memset((char*)r, 0, PGSIZE); // fill with junk
+
+  //printf("hart %d alloc page %p to list. total pages %d\r\n", cpuid(), r, freepages--);
   return (void*)r;
+}
+
+int
+get_num_of_free_pages(void)
+{
+  struct run *r;
+
+  int i = 0;
+  for(r = kmem.freelist; r; r = r->next) i++;
+
+  return i;
 }

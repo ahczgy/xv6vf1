@@ -1,6 +1,7 @@
 K=kernel
 U=user
 D=sdio
+G=gpio
 
 OBJS = \
   $K/entry.o \
@@ -30,7 +31,7 @@ OBJS = \
   $K/kernelvec.o \
   $K/plic.o \
   $K/virtio_disk.o \
-  $K/gpio.o \
+  $G/gpio.o \
   $D/mmc_write.o \
   $D/ctype.o \
   $D/util.o \
@@ -38,7 +39,7 @@ OBJS = \
   $D/timer.o \
   $D/mmc.o \
   $D/dwmmc.o \
-  $K/sdio.o \
+  $D/sdio.o \
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -71,7 +72,7 @@ CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer  -gdwarf-2
 CFLAGS += -MD
 CFLAGS += -mcmodel=medany
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
-CFLAGS += -I. -I./sdio
+CFLAGS += -I. -I./sdio -I./gpio -I./kernel
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
@@ -88,9 +89,12 @@ $K/kernel: $(OBJS) $K/kernel.ld $U/initcode
 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) 
 	$(OBJDUMP) -S $K/kernel > $K/kernel.asm
 	$(OBJCOPY) -S -O binary $K/kernel /mnt/e/bin/kernel.bin
-	@if [ -f fsz.sh ]; then ./fsz.sh /mnt/e/bin/kernel.bin;  rm -f /mnt/e/bin/kernel.bin; fi
+	#$(OBJCOPY)  -O binary $K/kernel /mnt/e/bin/kernel.bin
+	#@if [ -f fsz.sh ]; then ./fsz.sh /mnt/e/bin/kernel.bin; rm -f /mnt/e/bin/kernel.bin; fi
 	#@if [ -f spl_tool ]; then ./spl_tool -c -f /mnt/e/bin/kernel.bin; fi
+	#@if [ -f /mnt/e/bin/kernel.bin ]; then rm -f /mnt/e/bin/kernel.bin; fi
 	$(OBJDUMP) -t $K/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $K/kernel.sym
+
 
 $U/initcode: $U/initcode.S
 	$(CC) $(CFLAGS) -march=rv64g -nostdinc -I. -Ikernel -c $U/initcode.S -o $U/initcode.o
@@ -104,9 +108,10 @@ tags: $(OBJS) _init
 ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o
 
 _%: %.o $(ULIB)
+#	$(shell echo $(@D) $(@F) "here....................")
 	$(LD) $(LDFLAGS) -T $U/user.ld -o $@ $^
-	$(OBJDUMP) -S $@ > $*.asm
-	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
+#	$(OBJDUMP) -S $@ > $*.asm
+#	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
 
 $U/usys.S : $U/usys.pl
 	perl $U/usys.pl > $U/usys.S
@@ -147,9 +152,11 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 
-fs.img: mkfs/mkfs README $(UPROGS)
-	mkfs/mkfs fs.img README $(UPROGS)
+#fs.img: mkfs/mkfs README #$(UPROGS)
+#	mkfs/mkfs fs.img README #$(UPROGS)
 
+fs.img: mkfs/mkfs README $(UPROGS) 
+	mkfs/mkfs fs.img README $(UPROGS)
 -include kernel/*.d user/*.d
 
 clean: 
@@ -172,17 +179,20 @@ CPUS := 2
 endif
 
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
-QEMUOPTS += -global virtio-mmio.force-legacy=false
-QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
-QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+#QEMUOPTS += -global virtio-mmio.force-legacy=false
+#QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
+#QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 
-qemu: $K/kernel fs.img
+#qemu: $K/kernel fs.img
+qemu: $K/kernel
 	$(QEMU) $(QEMUOPTS)
 
 .gdbinit: .gdbinit.tmpl-riscv
 	sed "s/:1234/:$(GDBPORT)/" < $^ > $@
 
-qemu-gdb: $K/kernel .gdbinit fs.img
+#qemu-gdb: $K/kernel .gdbinit fs.img
+qemu-gdb: $K/kernel .gdbinit
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
+
 

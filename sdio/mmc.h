@@ -374,11 +374,13 @@ struct mmc_ops {
 	int (*init)(struct mmc *mmc);
 	int (*getcd)(struct mmc *mmc);
 	int (*getwp)(struct mmc *mmc);
+	void (*test)(void);
 };
 
 struct mmc_config {
 	const char *name;
-	const struct mmc_ops *ops;
+	//const struct mmc_ops *ops;
+	struct mmc_ops *ops;
 	u32 host_caps;
 	u32 voltages;
 	u32 f_min;
